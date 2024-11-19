@@ -85,6 +85,12 @@ end
 -- Returns a filter function for RawBlock elements, checking for LaTeX
 -- pagebreak/newpage commands; returns `nil` when the target format is
 -- LaTeX.
+local function RawBlock(el)
+  if el.text == '<!-- \\newpage !-->' then
+    return newpage(FORMAT, pagebreak_from_config({}))
+  end
+end
+
 local function latex_pagebreak (pagebreak)
   -- Don't do anything if the output is TeX
   if FORMAT:match 'tex$' then
@@ -125,8 +131,7 @@ local function para_pagebreak(raw_pagebreak, checks)
   end
 end
 
---- Filter function; this is the entrypoint when used as a filter.
-function Pandoc (doc)
+local function process_doc(doc)
   local config = doc.meta.pagebreak or {}
   local break_on = config['break-on'] or {}
   local raw_pagebreak = newpage(FORMAT, pagebreak_from_config(doc.meta))
@@ -147,3 +152,8 @@ function Pandoc (doc)
       or nil
   }
 end
+
+return {
+  { RawBlock = RawBlock },
+  { Pandoc = process_doc }
+}
